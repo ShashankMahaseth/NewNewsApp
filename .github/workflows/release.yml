@@ -39,6 +39,16 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK Build Tools
+        run: |
+            sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
       - name: Version Bump
         uses: chkfung/android-version-actions@v1.2.2
         with: 
@@ -46,14 +56,8 @@ jobs:
           versionCode: ${{ github.run_number }} 
           versionName: 1.0.${{ github.run_number }}
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Assemble Release bundle (AAB)
-        run: ./gradlew bundleRelease
-
-      - name: Assemble Release APK
-        run: ./gradlew assembleRelease
+      - name: Build Release Artifacts
+        run: ./gradlew bundleRelease assembleRelease
 
       - name: Sign AAB
         uses: r0adkll/sign-android-release@v1
@@ -74,6 +78,8 @@ jobs:
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           alias: ${{ secrets.ANDROID_DEVS_ALIAS }}
           keyPassword: ${{ secrets.ANDROID_DEVS_ALIAS_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "33.0.2"
 
       - name: Upload signed AAB as artifact
         uses: actions/upload-artifact@v4
