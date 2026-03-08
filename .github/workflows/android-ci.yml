@@ -1,0 +1,32 @@
+---
+name: Android CI
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Get java image
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        
+      - name: Make grdlew executeable
+        run: chmod 755 gradlew
+        
+      - name: Build apk
+        run: ./gradlew assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug.apk  
+          path: app/build/outputs/apk/debug/app-debug.apk
+        
