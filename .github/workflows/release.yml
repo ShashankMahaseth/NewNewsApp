@@ -26,6 +26,7 @@ jobs:
         run: ./gradlew clean testDebug
 
   distribute:
+    needs: test
     name: Build & Sign Release Artifacts
     runs-on: ubuntu-latest
 
@@ -81,14 +82,33 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "33.0.2"
 
+      - name: Rename APK
+        run: |
+          cp "${{ steps.sign_apk.outputs.signedReleaseFile }}" "NewNews-v1.0.${{ github.run_number }}.apk"
+
+      - name: Rename AAB
+        run: |
+          cp "${{ steps.sign_aab.outputs.signedReleaseFile }}" "NewNews-v1.0.${{ github.run_number }}.aab"
+
       - name: Upload signed AAB as artifact
         uses: actions/upload-artifact@v4
         with:
           name: signed-release-aab
-          path: ${{ steps.sign_aab.outputs.signedReleaseFile }}
+          path: NewNews-v1.0.${{ github.run_number }}.aab
 
       - name: Upload signed APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: signed-release-apk
-          path: ${{ steps.sign_apk.outputs.signedReleaseFile }}
+          path: NewNews-v1.0.${{ github.run_number }}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: NewNews v1.0.${{ github.run_number }}
+          files: |
+            NewNews-v1.0.${{ github.run_number }}.apk
+            NewNews-v1.0.${{ github.run_number }}.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
