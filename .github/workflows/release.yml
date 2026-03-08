@@ -1,4 +1,4 @@
-name: Deploy to Google Play
+name: Release Signed APK
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
           java-version: "17"
 
       - name: Version Bump
-        uses: chkfung/android-version-actions@1.2.2
+        uses: chkfung/android-version-actions@v1.2.2
         with: 
           gradlePath: app/build.gradle.kts
           versionCode: ${{ github.run_number }} 
