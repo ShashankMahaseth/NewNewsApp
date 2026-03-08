@@ -1,4 +1,4 @@
-name: Release Signed APK
+name: Release Signed Artifacts
 
 on:
   push:
@@ -26,8 +26,7 @@ jobs:
         run: ./gradlew clean testDebug
 
   distribute:
-    name: Distribute bundle to Google Play
-    needs: test
+    name: Build & Sign Release Artifacts
     runs-on: ubuntu-latest
 
     steps:
@@ -45,16 +44,32 @@ jobs:
         with: 
           gradlePath: app/build.gradle.kts
           versionCode: ${{ github.run_number }} 
-          versionName: 1.0.0
+          versionName: 1.0.${{ github.run_number }}
 
-      - name: Assemble Release bundle
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Assemble Release bundle (AAB)
         run: ./gradlew bundleRelease
 
-      - name: Sign APK/AAB
+      - name: Assemble Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Sign AAB
         uses: r0adkll/sign-android-release@v1
-        id: sign_app
+        id: sign_aab
         with:
           releaseDirectory: app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          alias: ${{ secrets.ANDROID_DEVS_ALIAS }}
+          keyPassword: ${{ secrets.ANDROID_DEVS_ALIAS_PASSWORD }}
+
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_apk
+        with:
+          releaseDirectory: app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           alias: ${{ secrets.ANDROID_DEVS_ALIAS }}
@@ -64,4 +79,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: signed-release-aab
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          path: ${{ steps.sign_aab.outputs.signedReleaseFile }}
+
+      - name: Upload signed APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-release-apk
+          path: ${{ steps.sign_apk.outputs.signedReleaseFile }}
